@@ -1,6 +1,6 @@
 import csv, re, numpy, json, ast, re
 import shutil, datetime, logging
-import ctk, vtk, qt, PythonQt
+import ctk, vtk, qt
 from collections import OrderedDict
 
 import SimpleITK as sitk
@@ -3696,7 +3696,7 @@ class TargetDisplacementChartWidget(object):
   def onDockChartViewToggled(self,checked):
     if checked:
       self.chartPopupWindow = qt.QDialog()
-      self.chartPopupWindow.setWindowFlags(PythonQt.QtCore.Qt.WindowStaysOnTopHint)
+      self.chartPopupWindow.setWindowFlags(qt.Qt.WindowStaysOnTopHint)
       layout = qt.QGridLayout()
       self.chartPopupWindow.setLayout(layout)
       layout.addWidget(self._chartView)
