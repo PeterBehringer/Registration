@@ -1,6 +1,6 @@
 import csv, re, numpy, json, ast, re
 import shutil, datetime, logging
-import ctk, vtk, qt
+import ctk, vtk, qt, PythonQt
 from collections import OrderedDict
 
 import SimpleITK as sitk
@@ -565,6 +565,9 @@ class SliceTrackerWidget(ModuleWidgetMixin, SliceTrackerConstants, ScriptedLoada
     self.overviewGroupBoxLayout.addWidget(self.trackTargetsButton, 5, 0, 1, 2)
     self.overviewGroupBoxLayout.addWidget(self.closeCaseButton, 6, 0, 1, 2)
     self.overviewGroupBoxLayout.addWidget(self.completeCaseButton, 7, 0, 1, 2)
+
+    self.targetDisplacementChart = TargetDisplacementChartWidget()
+    self.overviewGroupBoxLayout.addWidget(self.targetDisplacementChart.plotFrame, 8, 0, 1, 2)
 
     self.overviewGroupBoxLayout.setRowStretch(6, 1)
     self.layout.addWidget(self.overviewGroupBox)
@@ -3576,3 +3579,143 @@ class NewCaseSelectionNameWidget(qt.QMessageBox, ModuleWidgetMixin):
     self.preview.setText("New case directory: " + self.newCaseDirectory)
     self.okButton.enabled = not os.path.exists(self.newCaseDirectory)
     self.notice.text = "" if not os.path.exists(self.newCaseDirectory) else "Note: Directory already exists."
+
+class TargetDisplacementChartWidget(object):
+    
+  @property
+  def chartView(self):
+    return self._chartView
+  
+  @property
+  def chart(self):
+    return self._chartView.chart()
+    
+  @property
+  def xAxis(self):
+    return self.chart.GetAxis(1)
+  
+  @property
+  def yAxis(self):
+    return self.chart.GetAxis(0)  
+
+  @property
+  def showLegend(self):
+    return self._showLegend
+
+  @showLegend.setter
+  def showLegend(self, value):
+    assert type(value) is bool, "Only boolean values are allowed for this class member"
+    self._showLegend = value
+    self.chart.SetShowLegend(value)
+
+  def __init__(self):
+    self._chartView = ctk.ctkVTKChartView()
+    self._chartView.minimumSize = qt.QSize(200,200)
+    self._showLegend = False
+    self.xAxis.SetTitle('Time Unit')
+    self.yAxis.SetTitle('Displacement')
+    
+    
+    self.chartTable = vtk.vtkTable()
+
+    self.arrX = vtk.vtkFloatArray()
+    self.arrX.SetName('X Axis')
+    
+    self.arrXD = vtk.vtkFloatArray()
+    self.arrXD.SetName('X Component')
+    
+    self.arrYD = vtk.vtkFloatArray()
+    self.arrYD.SetName('Y Component')
+    
+    self.arrZD = vtk.vtkFloatArray()
+    self.arrZD.SetName('Z Component')
+
+    self.arrX.InsertNextValue(0)
+    self.arrXD.InsertNextValue(0)
+    self.arrYD.InsertNextValue(0)
+    self.arrZD.InsertNextValue(0)
+
+    self.chartPopupWindow = None
+    self.chartPopupSize = qt.QSize(600, 300)
+    self.chartPopupPosition = qt.QPoint(0,0)
+    
+    self.showLegendCheckBox = qt.QCheckBox('Show legend')
+    self.showLegendCheckBox.setChecked(0)
+
+    self.plotFrame = ctk.ctkCollapsibleButton()
+    self.plotFrame.text = "Plotting"
+    self.plotFrame.collapsed = 0
+    plotFrameLayout = qt.QGridLayout(self.plotFrame)
+    self.plottingFrameWidget = qt.QWidget()
+    self.plottingFrameLayout = qt.QGridLayout()
+    self.plottingFrameWidget.setLayout(self.plottingFrameLayout)
+    self.plottingFrameLayout.addWidget(self.showLegendCheckBox)
+    self.plottingFrameLayout.addWidget(self._chartView)
+
+    self.popupChartButton = qt.QPushButton("Undock chart")
+    self.popupChartButton.setCheckable(True)
+    self.plottingFrameLayout.addWidget(self.popupChartButton)
+
+    plotFrameLayout.addWidget(self.plottingFrameWidget)
+
+    self.popupChartButton.connect('toggled(bool)', self.onDockChartViewToggled)
+    self.showLegendCheckBox.connect('stateChanged(int)', self.onShowLegendChanged)
+
+  def addPlotPoints(self,triplets):
+    self.chartTable.SetNumberOfRows(len(triplets))
+    for i in range(0,len(triplets)):
+      self.arrX.InsertNextValue(i+1)
+      self.arrXD.InsertNextValue(triplets[i][0])
+      self.arrYD.InsertNextValue(triplets[i][1])
+      self.arrZD.InsertNextValue(triplets[i][2])
+
+    self.chartTable.AddColumn(self.arrX)
+    self.chartTable.AddColumn(self.arrXD)
+    self.chartTable.AddColumn(self.arrYD)
+    self.chartTable.AddColumn(self.arrZD)
+    
+    plot = self.chart.AddPlot(vtk.vtkChart.LINE)
+    plot.SetInputData(self.chartTable,0,1)
+    plot.SetColor(255,0,0,255)
+    
+    plot2 = self.chart.AddPlot(vtk.vtkChart.LINE)
+    plot2.SetInputData(self.chartTable,0,2)
+    plot2.SetColor(0,255,0,255)
+    
+    plot3 = self.chart.AddPlot(vtk.vtkChart.LINE)
+    plot3.SetInputData(self.chartTable,0,3)
+    plot3.SetColor(0,0,255,255)
+
+
+  def onShowLegendChanged(self, checked):
+    if checked == 2:
+      self.chart.SetShowLegend(True)
+    else:
+      self.chart.SetShowLegend(False)
+
+  def onDockChartViewToggled(self,checked):
+    if checked:
+      self.chartPopupWindow = qt.QDialog()
+      self.chartPopupWindow.setWindowFlags(PythonQt.QtCore.Qt.WindowStaysOnTopHint)
+      layout = qt.QGridLayout()
+      self.chartPopupWindow.setLayout(layout)
+      layout.addWidget(self._chartView)
+      layout.addWidget(self.popupChartButton)
+      self.chartPopupWindow.finished.connect(self.dockChartView)
+      self.chartPopupWindow.resize(self.chartPopupSize)
+      self.chartPopupWindow.move(self.chartPopupPosition)
+      self.chartPopupWindow.show()
+      self.popupChartButton.setText("Dock chart")
+      self._chartView.show()
+    else:
+      self.chartPopupWindow.close()
+
+  def dockChartView(self):
+    self.chartPopupSize = self.chartPopupWindow.size
+    self.chartPopupPosition = self.chartPopupWindow.pos
+    self.plottingFrameLayout.addWidget(self._chartView)
+    self.plottingFrameLayout.addWidget(self.popupChartButton)
+    self.popupChartButton.setText("Undock chart")
+    self.popupChartButton.disconnect('toggled(bool)',self.onDockChartViewToggled)
+    self.popupChartButton.checked = False
+    self.popupChartButton.connect('toggled(bool)',self.onDockChartViewToggled)
