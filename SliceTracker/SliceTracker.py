@@ -3580,6 +3580,7 @@ class NewCaseSelectionNameWidget(qt.QMessageBox, ModuleWidgetMixin):
     self.okButton.enabled = not os.path.exists(self.newCaseDirectory)
     self.notice.text = "" if not os.path.exists(self.newCaseDirectory) else "Note: Directory already exists."
 
+
 class TargetDisplacementChartWidget(object):
     
   @property
@@ -3614,8 +3615,6 @@ class TargetDisplacementChartWidget(object):
     self._showLegend = False
     self.xAxis.SetTitle('Time Unit')
     self.yAxis.SetTitle('Displacement')
-    
-    
     self.chartTable = vtk.vtkTable()
 
     self.arrX = vtk.vtkFloatArray()
@@ -3655,7 +3654,6 @@ class TargetDisplacementChartWidget(object):
     self.popupChartButton = qt.QPushButton("Undock chart")
     self.popupChartButton.setCheckable(True)
     self.plottingFrameLayout.addWidget(self.popupChartButton)
-
     plotFrameLayout.addWidget(self.plottingFrameWidget)
 
     self.popupChartButton.connect('toggled(bool)', self.onDockChartViewToggled)
@@ -3668,7 +3666,6 @@ class TargetDisplacementChartWidget(object):
       self.arrXD.InsertNextValue(triplets[i][0])
       self.arrYD.InsertNextValue(triplets[i][1])
       self.arrZD.InsertNextValue(triplets[i][2])
-
     self.chartTable.AddColumn(self.arrX)
     self.chartTable.AddColumn(self.arrXD)
     self.chartTable.AddColumn(self.arrYD)
@@ -3685,7 +3682,6 @@ class TargetDisplacementChartWidget(object):
     plot3 = self.chart.AddPlot(vtk.vtkChart.LINE)
     plot3.SetInputData(self.chartTable,0,3)
     plot3.SetColor(0,0,255,255)
-
 
   def onShowLegendChanged(self, checked):
     if checked == 2:
