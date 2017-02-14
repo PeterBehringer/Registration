@@ -204,6 +204,7 @@ class SliceTrackerWidget(ModuleWidgetMixin, SliceTrackerConstants, ScriptedLoada
       if coverProstate:
         self.targetTableModel.coverProstateTargetList = coverProstate.approvedTargets
     self.targetTable.enabled = targets is not None
+    self.updateDisplacementChartTargetSelectorTable()
 
   @currentCaseDirectory.setter
   def currentCaseDirectory(self, path):
@@ -277,6 +278,7 @@ class SliceTrackerWidget(ModuleWidgetMixin, SliceTrackerConstants, ScriptedLoada
     self.seriesModel.clear()
     self.trackTargetsButton.setEnabled(False)
     self.currentTargets = None
+    self.updateDisplacementChartTargetSelectorTable()
     self.resetViewSettingButtons()
     self.resetVisualEffects()
     self.disconnectKeyEventObservers()
@@ -887,6 +889,7 @@ class SliceTrackerWidget(ModuleWidgetMixin, SliceTrackerConstants, ScriptedLoada
     def setupSelectorConnections():
       self.resultSelector.connect('currentIndexChanged(QString)', self.onRegistrationResultSelected)
       self.intraopSeriesSelector.connect('currentIndexChanged(QString)', self.onIntraopSeriesSelectionChanged)
+      self.targetDisplacementChart.DisplacementChartTargetSelector.connect('currentIndexChanged(QString)', self.onDisplacementChartTargetSelectionChanged)
 
     def setupCheckBoxConnections():
       self.rockCheckBox.connect('toggled(bool)', self.onRockToggled)
@@ -1507,6 +1510,19 @@ class SliceTrackerWidget(ModuleWidgetMixin, SliceTrackerConstants, ScriptedLoada
     if modelIndex:
       self.targetTable.clicked(modelIndex)
 
+  def updateDisplacementChartTargetSelectorTable(self):
+    self.targetDisplacementChart.DisplacementChartTargetSelector.blockSignals(True)
+    self.targetDisplacementChart.DisplacementChartTargetSelector.clear()
+    if self.targetTableModel.rowCount():
+      rows = self.targetTableModel.rowCount()
+      for i in range(rows):
+        self.targetDisplacementChart.DisplacementChartTargetSelector.addItem(self.targetTableModel.targetList.GetNthFiducialLabel(i))
+    self.targetDisplacementChart.DisplacementChartTargetSelector.setCurrentIndex(-1)
+    self.targetDisplacementChart.DisplacementChartTargetSelector.blockSignals(False)
+
+  def onDisplacementChartTargetSelectionChanged(self):
+    pass
+
   def removeSliceAnnotations(self):
     for annotation in self.sliceAnnotations:
       annotation.remove()
@@ -1869,6 +1885,7 @@ class SliceTrackerWidget(ModuleWidgetMixin, SliceTrackerConstants, ScriptedLoada
     self.markupsLogic.JumpSlicesToNthPointInMarkup(self.logic.preopTargets.GetID(), 0)
     self.targetTable.selectRow(0)
     self.targetTable.enabled = True
+    self.updateDisplacementChartTargetSelectorTable()
 
   def promptUserAndApplyBiasCorrectionIfNeeded(self):
     if not self.continueOldCase:
@@ -3648,12 +3665,18 @@ class TargetDisplacementChartWidget(object):
     self.plottingFrameWidget = qt.QWidget()
     self.plottingFrameLayout = qt.QGridLayout()
     self.plottingFrameWidget.setLayout(self.plottingFrameLayout)
-    self.plottingFrameLayout.addWidget(self.showLegendCheckBox)
-    self.plottingFrameLayout.addWidget(self._chartView)
+    self.plottingFrameLayout.addWidget(self.showLegendCheckBox,0,0)
+    self.plottingFrameLayout.addWidget(self._chartView,1,0)
 
     self.popupChartButton = qt.QPushButton("Undock chart")
     self.popupChartButton.setCheckable(True)
-    self.plottingFrameLayout.addWidget(self.popupChartButton)
+    self.plottingFrameLayout.addWidget(self.popupChartButton,2,0)
+
+    self.DisplacementChartTargetSelector = qt.QComboBox()
+    self.targetSelectorLayout = qt.QFormLayout()
+    self.targetSelectorLayout.addRow("Target:",self.DisplacementChartTargetSelector)
+    self.plottingFrameLayout.addLayout(self.targetSelectorLayout,3,0)
+
     plotFrameLayout.addWidget(self.plottingFrameWidget)
 
     self.popupChartButton.connect('toggled(bool)', self.onDockChartViewToggled)
@@ -3697,6 +3720,9 @@ class TargetDisplacementChartWidget(object):
       self.chartPopupWindow.setLayout(layout)
       layout.addWidget(self._chartView)
       layout.addWidget(self.popupChartButton)
+      targetLayout = qt.QFormLayout()
+      targetLayout.addRow("Target:", self.DisplacementChartTargetSelector)
+      layout.addLayout(targetLayout,3,0)
       self.chartPopupWindow.finished.connect(self.dockChartView)
       self.chartPopupWindow.resize(self.chartPopupSize)
       self.chartPopupWindow.move(self.chartPopupPosition)
@@ -3709,8 +3735,10 @@ class TargetDisplacementChartWidget(object):
   def dockChartView(self):
     self.chartPopupSize = self.chartPopupWindow.size
     self.chartPopupPosition = self.chartPopupWindow.pos
-    self.plottingFrameLayout.addWidget(self._chartView)
-    self.plottingFrameLayout.addWidget(self.popupChartButton)
+    self.plottingFrameLayout.addWidget(self._chartView,1,0)
+    self.plottingFrameLayout.addWidget(self.popupChartButton,2,0)
+    child = self.targetSelectorLayout.takeAt(0)
+    self.targetSelectorLayout.insertRow(0,"Target:",self.DisplacementChartTargetSelector)
     self.popupChartButton.setText("Undock chart")
     self.popupChartButton.disconnect('toggled(bool)',self.onDockChartViewToggled)
     self.popupChartButton.checked = False
