@@ -279,6 +279,7 @@ class SliceTrackerWidget(ModuleWidgetMixin, SliceTrackerConstants, ScriptedLoada
     self.trackTargetsButton.setEnabled(False)
     self.currentTargets = None
     self.updateDisplacementChartTargetSelectorTable()
+    self.targetDisplacementChart.resetAndInitializeChart()
     self.resetViewSettingButtons()
     self.resetVisualEffects()
     self.disconnectKeyEventObservers()
@@ -1520,8 +1521,37 @@ class SliceTrackerWidget(ModuleWidgetMixin, SliceTrackerConstants, ScriptedLoada
     self.targetDisplacementChart.DisplacementChartTargetSelector.setCurrentIndex(-1)
     self.targetDisplacementChart.DisplacementChartTargetSelector.blockSignals(False)
 
+  def calculateTargetDisplacement(self, prevTargets, currTargets):
+    prevPos = [0.0, 0.0, 0.0]
+    currPos = [0.0, 0.0, 0.0]
+    for i in range(0, currTargets.GetNumberOfFiducials()):
+      if currTargets.GetNthFiducialLabel(i) == self.targetDisplacementChart.DisplacementChartTargetSelector.currentText:
+        currTargets.GetNthFiducialPosition(i, currPos)
+        prevTargets.GetNthFiducialPosition(i, prevPos)
+        displacement = [currPos[0] - prevPos[0], currPos[1] - prevPos[1], currPos[2] - prevPos[2]]
+        return displacement
+
   def onDisplacementChartTargetSelectionChanged(self):
-    pass
+    self.targetDisplacementChart.resetAndInitializeChart()
+    results = sorted(self.registrationResults.getResultsAsList(), key=lambda s: s.seriesNumber)
+    iter1 = 0
+    iter2 = 1
+    while iter2 < len(results):
+      if results[iter1].approved and results[iter2].approved:
+        prevTargets = results[iter1].approvedTargets
+        currTargets = results[iter2].approvedTargets
+        displacement = self.calculateTargetDisplacement(prevTargets, currTargets)
+        self.targetDisplacementChart.addPlotPoints([displacement])
+        iter1 = iter2
+        iter2 += 1
+      elif results[iter1].approved:
+        iter2 += 1
+      elif results[iter2].approved:
+        iter1 = iter2
+        iter2 += 1
+      else:
+        iter2 += 1
+        iter1 += 1
 
   def removeSliceAnnotations(self):
     for annotation in self.sliceAnnotations:
@@ -2019,6 +2049,7 @@ class SliceTrackerWidget(ModuleWidgetMixin, SliceTrackerConstants, ScriptedLoada
     self.currentStep = self.STEP_OVERVIEW
     self.logic.removeNeedleModelNode()
     self.targetTableModel.computeCursorDistances = False
+    self.targetDisplacementChart.resetAndInitializeChart()
     self.save()
     self.disconnectKeyEventObservers()
     self.hideAllLabels()
@@ -3599,22 +3630,22 @@ class NewCaseSelectionNameWidget(qt.QMessageBox, ModuleWidgetMixin):
 
 
 class TargetDisplacementChartWidget(object):
-    
+
   @property
   def chartView(self):
     return self._chartView
-  
+
   @property
   def chart(self):
     return self._chartView.chart()
-    
+
   @property
   def xAxis(self):
     return self.chart.GetAxis(1)
-  
+
   @property
   def yAxis(self):
-    return self.chart.GetAxis(0)  
+    return self.chart.GetAxis(0)
 
   @property
   def showLegend(self):
@@ -3628,7 +3659,7 @@ class TargetDisplacementChartWidget(object):
 
   def __init__(self):
     self._chartView = ctk.ctkVTKChartView()
-    self._chartView.minimumSize = qt.QSize(200,200)
+    self._chartView.minimumSize = qt.QSize(200, 200)
     self._showLegend = False
     self.xAxis.SetTitle('Time Unit')
     self.yAxis.SetTitle('Displacement')
@@ -3636,25 +3667,29 @@ class TargetDisplacementChartWidget(object):
 
     self.arrX = vtk.vtkFloatArray()
     self.arrX.SetName('X Axis')
-    
-    self.arrXD = vtk.vtkFloatArray()
-    self.arrXD.SetName('X Component')
-    
-    self.arrYD = vtk.vtkFloatArray()
-    self.arrYD.SetName('Y Component')
-    
-    self.arrZD = vtk.vtkFloatArray()
-    self.arrZD.SetName('Z Component')
 
-    self.arrX.InsertNextValue(0)
-    self.arrXD.InsertNextValue(0)
-    self.arrYD.InsertNextValue(0)
-    self.arrZD.InsertNextValue(0)
+    self.arrXD = vtk.vtkFloatArray()
+    self.arrXD.SetName('L/R Displacement')
+
+    self.arrYD = vtk.vtkFloatArray()
+    self.arrYD.SetName('P/A Displacement')
+
+    self.arrZD = vtk.vtkFloatArray()
+    self.arrZD.SetName('I/S Displacement')
+
+    self.arrD = vtk.vtkFloatArray()
+    self.arrD.SetName('3-D Distance')
+
+    self.chartTable.AddColumn(self.arrX)
+    self.chartTable.AddColumn(self.arrXD)
+    self.chartTable.AddColumn(self.arrYD)
+    self.chartTable.AddColumn(self.arrZD)
+    self.chartTable.AddColumn(self.arrD)
 
     self.chartPopupWindow = None
     self.chartPopupSize = qt.QSize(600, 300)
-    self.chartPopupPosition = qt.QPoint(0,0)
-    
+    self.chartPopupPosition = qt.QPoint(0, 0)
+
     self.showLegendCheckBox = qt.QCheckBox('Show legend')
     self.showLegendCheckBox.setChecked(0)
 
@@ -3665,46 +3700,74 @@ class TargetDisplacementChartWidget(object):
     self.plottingFrameWidget = qt.QWidget()
     self.plottingFrameLayout = qt.QGridLayout()
     self.plottingFrameWidget.setLayout(self.plottingFrameLayout)
-    self.plottingFrameLayout.addWidget(self.showLegendCheckBox,0,0)
-    self.plottingFrameLayout.addWidget(self._chartView,1,0)
+    self.plottingFrameLayout.addWidget(self.showLegendCheckBox, 0, 0)
+    self.plottingFrameLayout.addWidget(self._chartView, 1, 0)
 
     self.popupChartButton = qt.QPushButton("Undock chart")
     self.popupChartButton.setCheckable(True)
-    self.plottingFrameLayout.addWidget(self.popupChartButton,2,0)
+    self.plottingFrameLayout.addWidget(self.popupChartButton, 2, 0)
 
     self.DisplacementChartTargetSelector = qt.QComboBox()
     self.targetSelectorLayout = qt.QFormLayout()
-    self.targetSelectorLayout.addRow("Target:",self.DisplacementChartTargetSelector)
-    self.plottingFrameLayout.addLayout(self.targetSelectorLayout,3,0)
+    self.targetSelectorLayout.addRow("Target:", self.DisplacementChartTargetSelector)
+    self.plottingFrameLayout.addLayout(self.targetSelectorLayout, 3, 0)
 
     plotFrameLayout.addWidget(self.plottingFrameWidget)
 
     self.popupChartButton.connect('toggled(bool)', self.onDockChartViewToggled)
     self.showLegendCheckBox.connect('stateChanged(int)', self.onShowLegendChanged)
 
-  def addPlotPoints(self,triplets):
-    self.chartTable.SetNumberOfRows(len(triplets))
-    for i in range(0,len(triplets)):
-      self.arrX.InsertNextValue(i+1)
+    self.addPlotPoints([[0, 0, 0], [0, 0, 0]])
+
+  def addPlotPoints(self, triplets):
+    numCurrentRows = self.chartTable.GetNumberOfRows()
+    self.chartView.removeAllPlots()
+    for i in range(0, len(triplets)):
+      if numCurrentRows == 0:
+        self._chartView.hide()
+        self.arrX.InsertNextValue(0)
+      else:
+        self._chartView.show()
+        self.arrX.InsertNextValue(numCurrentRows + i - 1)
       self.arrXD.InsertNextValue(triplets[i][0])
       self.arrYD.InsertNextValue(triplets[i][1])
       self.arrZD.InsertNextValue(triplets[i][2])
-    self.chartTable.AddColumn(self.arrX)
-    self.chartTable.AddColumn(self.arrXD)
-    self.chartTable.AddColumn(self.arrYD)
-    self.chartTable.AddColumn(self.arrZD)
-    
+      distance = (triplets[i][0] ** 2 + triplets[i][1] ** 2 + triplets[i][2] ** 2) ** 0.5
+      self.arrD.InsertNextValue(distance)
+
     plot = self.chart.AddPlot(vtk.vtkChart.LINE)
-    plot.SetInputData(self.chartTable,0,1)
-    plot.SetColor(255,0,0,255)
-    
+    plot.SetInputData(self.chartTable, 0, 1)
+    plot.SetColor(255, 0, 0, 255)
+    vtk.vtkPlotLine.SafeDownCast(plot).SetMarkerStyle(4)
+    vtk.vtkPlotLine.SafeDownCast(plot).SetMarkerSize(3 * plot.GetPen().GetWidth())
+
     plot2 = self.chart.AddPlot(vtk.vtkChart.LINE)
-    plot2.SetInputData(self.chartTable,0,2)
-    plot2.SetColor(0,255,0,255)
-    
+    plot2.SetInputData(self.chartTable, 0, 2)
+    plot2.SetColor(0, 255, 0, 255)
+    vtk.vtkPlotLine.SafeDownCast(plot2).SetMarkerStyle(4)
+    vtk.vtkPlotLine.SafeDownCast(plot2).SetMarkerSize(3 * plot2.GetPen().GetWidth())
+
     plot3 = self.chart.AddPlot(vtk.vtkChart.LINE)
-    plot3.SetInputData(self.chartTable,0,3)
-    plot3.SetColor(0,0,255,255)
+    plot3.SetInputData(self.chartTable, 0, 3)
+    plot3.SetColor(0, 0, 255, 255)
+    vtk.vtkPlotLine.SafeDownCast(plot3).SetMarkerStyle(4)
+    vtk.vtkPlotLine.SafeDownCast(plot3).SetMarkerSize(3 * plot3.GetPen().GetWidth())
+
+    plot4 = self.chart.AddPlot(vtk.vtkChart.LINE)
+    plot4.SetInputData(self.chartTable, 0, 4)
+    plot4.SetColor(0, 0, 0, 255)
+    vtk.vtkPlotLine.SafeDownCast(plot4).SetMarkerStyle(4)
+    vtk.vtkPlotLine.SafeDownCast(plot4).SetMarkerSize(3 * plot4.GetPen().GetWidth())
+
+  def resetAndInitializeChart(self):
+    self.arrX.Initialize()
+    self.arrXD.Initialize()
+    self.arrYD.Initialize()
+    self.arrZD.Initialize()
+    self.arrD.Initialize()
+    self.addPlotPoints([[0, 0, 0], [0, 0, 0]])
+    if self.showLegendCheckBox.isChecked():
+      self.showLegendCheckBox.setChecked(False)
 
   def onShowLegendChanged(self, checked):
     if checked == 2:
@@ -3712,7 +3775,7 @@ class TargetDisplacementChartWidget(object):
     else:
       self.chart.SetShowLegend(False)
 
-  def onDockChartViewToggled(self,checked):
+  def onDockChartViewToggled(self, checked):
     if checked:
       self.chartPopupWindow = qt.QDialog()
       self.chartPopupWindow.setWindowFlags(qt.Qt.WindowStaysOnTopHint)
@@ -3722,7 +3785,7 @@ class TargetDisplacementChartWidget(object):
       layout.addWidget(self.popupChartButton)
       targetLayout = qt.QFormLayout()
       targetLayout.addRow("Target:", self.DisplacementChartTargetSelector)
-      layout.addLayout(targetLayout,3,0)
+      layout.addLayout(targetLayout, 3, 0)
       self.chartPopupWindow.finished.connect(self.dockChartView)
       self.chartPopupWindow.resize(self.chartPopupSize)
       self.chartPopupWindow.move(self.chartPopupPosition)
@@ -3735,11 +3798,11 @@ class TargetDisplacementChartWidget(object):
   def dockChartView(self):
     self.chartPopupSize = self.chartPopupWindow.size
     self.chartPopupPosition = self.chartPopupWindow.pos
-    self.plottingFrameLayout.addWidget(self._chartView,1,0)
-    self.plottingFrameLayout.addWidget(self.popupChartButton,2,0)
+    self.plottingFrameLayout.addWidget(self._chartView, 1, 0)
+    self.plottingFrameLayout.addWidget(self.popupChartButton, 2, 0)
     child = self.targetSelectorLayout.takeAt(0)
-    self.targetSelectorLayout.insertRow(0,"Target:",self.DisplacementChartTargetSelector)
+    self.targetSelectorLayout.insertRow(0, "Target:", self.DisplacementChartTargetSelector)
     self.popupChartButton.setText("Undock chart")
-    self.popupChartButton.disconnect('toggled(bool)',self.onDockChartViewToggled)
+    self.popupChartButton.disconnect('toggled(bool)', self.onDockChartViewToggled)
     self.popupChartButton.checked = False
-    self.popupChartButton.connect('toggled(bool)',self.onDockChartViewToggled)
+    self.popupChartButton.connect('toggled(bool)', self.onDockChartViewToggled)
