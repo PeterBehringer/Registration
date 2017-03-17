@@ -3661,7 +3661,7 @@ class TargetDisplacementChartWidget(object):
     self._chartView = ctk.ctkVTKChartView()
     self._chartView.minimumSize = qt.QSize(200, 200)
     self._showLegend = False
-    self.xAxis.SetTitle('Time Unit')
+    self.xAxis.SetTitle('Timepoint')
     self.yAxis.SetTitle('Displacement')
     self.chartTable = vtk.vtkTable()
 
@@ -3735,6 +3735,16 @@ class TargetDisplacementChartWidget(object):
       distance = (triplets[i][0] ** 2 + triplets[i][1] ** 2 + triplets[i][2] ** 2) ** 0.5
       self.arrD.InsertNextValue(distance)
 
+    xvals = vtk.vtkDoubleArray()
+    xlabels = vtk.vtkStringArray()
+    maxX = self.arrX.GetNumberOfValues() - 2
+    for j in range(0, maxX + 1):
+      xvals.InsertNextValue(j)
+      xlabels.InsertNextValue(str(j))
+    self.xAxis.SetCustomTickPositions(xvals, xlabels)
+    self.xAxis.SetBehavior(vtk.vtkAxis.FIXED)
+    self.xAxis.SetRange(0, maxX + 0.1)
+
     plot = self.chart.AddPlot(vtk.vtkChart.LINE)
     plot.SetInputData(self.chartTable, 0, 1)
     plot.SetColor(255, 0, 0, 255)
@@ -3772,8 +3782,10 @@ class TargetDisplacementChartWidget(object):
   def onShowLegendChanged(self, checked):
     if checked == 2:
       self.chart.SetShowLegend(True)
+      self.chartView.scene().SetDirty(True)
     else:
       self.chart.SetShowLegend(False)
+      self.chartView.scene().SetDirty(True)
 
   def onDockChartViewToggled(self, checked):
     if checked:
