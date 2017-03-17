@@ -280,6 +280,7 @@ class SliceTrackerWidget(ModuleWidgetMixin, SliceTrackerConstants, ScriptedLoada
     self.currentTargets = None
     self.updateDisplacementChartTargetSelectorTable()
     self.targetDisplacementChart.resetAndInitializeChart()
+    self.targetDisplacementChart.lastSelectedTarget = None
     self.resetViewSettingButtons()
     self.resetVisualEffects()
     self.disconnectKeyEventObservers()
@@ -1276,6 +1277,18 @@ class SliceTrackerWidget(ModuleWidgetMixin, SliceTrackerConstants, ScriptedLoada
       self.setIntraopSeriesButtons(trackingPossible, selectedSeries)
       self.configureViewersForSelectedIntraopSeries(selectedSeries)
       self.updateSliceAnnotations(selectedSeries)
+      if self.getSetting("COVER_PROSTATE") in selectedSeries or self.targetDisplacementChart.DisplacementChartTargetSelector.count == 0:
+        self.targetDisplacementChart.DisplacementChartTargetSelector.setEnabled(False)
+        self.targetDisplacementChart.lastSelectedTarget = None
+        self.targetDisplacementChart.resetAndInitializeChart()
+      elif not self.targetDisplacementChart.DisplacementChartTargetSelector.isEnabled():
+        self.targetDisplacementChart.DisplacementChartTargetSelector.setEnabled(True)
+      if self.targetDisplacementChart.lastSelectedTarget is not None:
+        lastTargetIndex = self.targetDisplacementChart.DisplacementChartTargetSelector.findText(self.targetDisplacementChart.lastSelectedTarget)
+        if lastTargetIndex is not -1:
+          self.targetDisplacementChart.DisplacementChartTargetSelector.setCurrentIndex(lastTargetIndex)
+        else:
+          self.targetDisplacementChart.resetAndInitializeChart()
     self.updateIntraopSeriesSelectorColor(selectedSeries)
     self.updateLayoutButtons(trackingPossible, selectedSeries)
 
@@ -1532,26 +1545,29 @@ class SliceTrackerWidget(ModuleWidgetMixin, SliceTrackerConstants, ScriptedLoada
         return displacement
 
   def onDisplacementChartTargetSelectionChanged(self):
-    self.targetDisplacementChart.resetAndInitializeChart()
-    results = sorted(self.registrationResults.getResultsAsList(), key=lambda s: s.seriesNumber)
-    iter1 = 0
-    iter2 = 1
-    while iter2 < len(results):
-      if results[iter1].approved and results[iter2].approved:
-        prevTargets = results[iter1].approvedTargets
-        currTargets = results[iter2].approvedTargets
-        displacement = self.calculateTargetDisplacement(prevTargets, currTargets)
-        self.targetDisplacementChart.addPlotPoints([displacement])
-        iter1 = iter2
-        iter2 += 1
-      elif results[iter1].approved:
-        iter2 += 1
-      elif results[iter2].approved:
-        iter1 = iter2
-        iter2 += 1
-      else:
-        iter2 += 1
-        iter1 += 1
+    if self.targetDisplacementChart.DisplacementChartTargetSelector.currentText != self.targetDisplacementChart.lastSelectedTarget:
+      self.targetDisplacementChart.resetAndInitializeChart()
+      if self.targetDisplacementChart.DisplacementChartTargetSelector.currentText:
+        self.targetDisplacementChart.lastSelectedTarget = self.targetDisplacementChart.DisplacementChartTargetSelector.currentText
+      results = sorted(self.registrationResults.getResultsAsList(), key=lambda s: s.seriesNumber)
+      iter1 = 0
+      iter2 = 1
+      while iter2 < len(results):
+        if results[iter1].approved and results[iter2].approved:
+          prevTargets = results[iter1].approvedTargets
+          currTargets = results[iter2].approvedTargets
+          displacement = self.calculateTargetDisplacement(prevTargets, currTargets)
+          self.targetDisplacementChart.addPlotPoints([displacement])
+          iter1 = iter2
+          iter2 += 1
+        elif results[iter1].approved:
+          iter2 += 1
+        elif results[iter2].approved:
+          iter1 = iter2
+          iter2 += 1
+        else:
+          iter2 += 1
+          iter1 += 1
 
   def removeSliceAnnotations(self):
     for annotation in self.sliceAnnotations:
@@ -3708,6 +3724,7 @@ class TargetDisplacementChartWidget(object):
     self.plottingFrameLayout.addWidget(self.popupChartButton, 2, 0)
 
     self.DisplacementChartTargetSelector = qt.QComboBox()
+    self.lastSelectedTarget = None
     self.targetSelectorLayout = qt.QFormLayout()
     self.targetSelectorLayout.addRow("Target:", self.DisplacementChartTargetSelector)
     self.plottingFrameLayout.addLayout(self.targetSelectorLayout, 3, 0)
@@ -3803,7 +3820,8 @@ class TargetDisplacementChartWidget(object):
       self.chartPopupWindow.move(self.chartPopupPosition)
       self.chartPopupWindow.show()
       self.popupChartButton.setText("Dock chart")
-      self._chartView.show()
+      if self.DisplacementChartTargetSelector.currentText:
+        self._chartView.show()
     else:
       self.chartPopupWindow.close()
 
