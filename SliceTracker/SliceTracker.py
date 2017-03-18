@@ -279,8 +279,8 @@ class SliceTrackerWidget(ModuleWidgetMixin, SliceTrackerConstants, ScriptedLoada
     self.trackTargetsButton.setEnabled(False)
     self.currentTargets = None
     self.updateDisplacementChartTargetSelectorTable()
-    self.targetDisplacementChart.resetAndInitializeChart()
     self.targetDisplacementChart.lastSelectedTarget = None
+    self.targetDisplacementChart.resetAndInitializeChart()
     self.resetViewSettingButtons()
     self.resetVisualEffects()
     self.disconnectKeyEventObservers()
@@ -3741,9 +3741,12 @@ class TargetDisplacementChartWidget(object):
     for i in range(0, len(triplets)):
       if numCurrentRows == 0:
         self._chartView.hide()
+        self.showLegendCheckBox.hide()
         self.arrX.InsertNextValue(0)
       else:
         self._chartView.show()
+        if not self.showLegendCheckBox.isVisible():
+          self.showLegendCheckBox.show()
         self.arrX.InsertNextValue(numCurrentRows + i - 1)
       self.arrXD.InsertNextValue(triplets[i][0])
       self.arrYD.InsertNextValue(triplets[i][1])
@@ -3792,7 +3795,7 @@ class TargetDisplacementChartWidget(object):
     self.arrZD.Initialize()
     self.arrD.Initialize()
     self.addPlotPoints([[0, 0, 0], [0, 0, 0]])
-    if self.showLegendCheckBox.isChecked():
+    if self.showLegendCheckBox.isChecked() and self.lastSelectedTarget is None:
       self.showLegendCheckBox.setChecked(False)
 
   def onShowLegendChanged(self, checked):
@@ -3808,6 +3811,7 @@ class TargetDisplacementChartWidget(object):
       self.chartPopupWindow.setLayout(layout)
       targetLayout = qt.QFormLayout()
       targetLayout.addRow("Target:", self.DisplacementChartTargetSelector)
+      targetLayout.addRow(self.showLegendCheckBox)
       layout.addLayout(targetLayout, 1, 0)
       layout.addWidget(self._chartView, 2, 0)
       child = self.targetSelectorLayout.takeAt(0)
@@ -3824,6 +3828,7 @@ class TargetDisplacementChartWidget(object):
   def dockChartView(self):
     self.chartPopupSize = self.chartPopupWindow.size
     self.chartPopupPosition = self.chartPopupWindow.pos
+    self.plottingFrameLayout.addWidget(self.showLegendCheckBox, 1, 0)
     self.plottingFrameLayout.addWidget(self._chartView, 2, 0)
     self.plottingFrameLayout.addWidget(self.popupChartButton, 3, 0)
     self.targetSelectorLayout.insertRow(0, "Target:", self.DisplacementChartTargetSelector)
