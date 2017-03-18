@@ -1277,18 +1277,7 @@ class SliceTrackerWidget(ModuleWidgetMixin, SliceTrackerConstants, ScriptedLoada
       self.setIntraopSeriesButtons(trackingPossible, selectedSeries)
       self.configureViewersForSelectedIntraopSeries(selectedSeries)
       self.updateSliceAnnotations(selectedSeries)
-      if self.getSetting("COVER_PROSTATE") in selectedSeries or self.targetDisplacementChart.DisplacementChartTargetSelector.count == 0:
-        self.targetDisplacementChart.DisplacementChartTargetSelector.setEnabled(False)
-        self.targetDisplacementChart.lastSelectedTarget = None
-        self.targetDisplacementChart.resetAndInitializeChart()
-      elif not self.targetDisplacementChart.DisplacementChartTargetSelector.isEnabled():
-        self.targetDisplacementChart.DisplacementChartTargetSelector.setEnabled(True)
-      if self.targetDisplacementChart.lastSelectedTarget is not None:
-        lastTargetIndex = self.targetDisplacementChart.DisplacementChartTargetSelector.findText(self.targetDisplacementChart.lastSelectedTarget)
-        if lastTargetIndex is not -1:
-          self.targetDisplacementChart.DisplacementChartTargetSelector.setCurrentIndex(lastTargetIndex)
-        else:
-          self.targetDisplacementChart.resetAndInitializeChart()
+      self.updateDisplacementChartOnSeriesSelectionChange(selectedSeries)
     self.updateIntraopSeriesSelectorColor(selectedSeries)
     self.updateLayoutButtons(trackingPossible, selectedSeries)
 
@@ -1550,24 +1539,34 @@ class SliceTrackerWidget(ModuleWidgetMixin, SliceTrackerConstants, ScriptedLoada
       if self.targetDisplacementChart.DisplacementChartTargetSelector.currentText:
         self.targetDisplacementChart.lastSelectedTarget = self.targetDisplacementChart.DisplacementChartTargetSelector.currentText
       results = sorted(self.registrationResults.getResultsAsList(), key=lambda s: s.seriesNumber)
-      iter1 = 0
-      iter2 = 1
-      while iter2 < len(results):
-        if results[iter1].approved and results[iter2].approved:
-          prevTargets = results[iter1].approvedTargets
-          currTargets = results[iter2].approvedTargets
+      prevIndex = 0
+      for currIndex, currResult in enumerate(results[1:], 1):
+        if results[prevIndex].approved and currResult.approved:
+          prevTargets = results[prevIndex].approvedTargets
+          currTargets = currResult.approvedTargets
           displacement = self.calculateTargetDisplacement(prevTargets, currTargets)
           self.targetDisplacementChart.addPlotPoints([displacement])
-          iter1 = iter2
-          iter2 += 1
-        elif results[iter1].approved:
-          iter2 += 1
-        elif results[iter2].approved:
-          iter1 = iter2
-          iter2 += 1
+          prevIndex = currIndex
+        elif currResult.approved:
+          prevIndex = currIndex
         else:
-          iter2 += 1
-          iter1 += 1
+          prevIndex += 1
+
+  def updateDisplacementChartOnSeriesSelectionChange(self, selectedSeries):
+    if self.getSetting("COVER_PROSTATE") in selectedSeries or self.targetDisplacementChart.DisplacementChartTargetSelector.count == 0:
+      self.targetDisplacementChart.DisplacementChartTargetSelector.setEnabled(False)
+      self.targetDisplacementChart.lastSelectedTarget = None
+      self.targetDisplacementChart.resetAndInitializeChart()
+    elif not self.targetDisplacementChart.DisplacementChartTargetSelector.isEnabled():
+      self.targetDisplacementChart.DisplacementChartTargetSelector.setEnabled(True)
+    if self.targetDisplacementChart.lastSelectedTarget is not None:
+      lastTargetIndex = self.targetDisplacementChart.DisplacementChartTargetSelector.findText(self.targetDisplacementChart.lastSelectedTarget)
+      if lastTargetIndex is not -1:
+        self.targetDisplacementChart.DisplacementChartTargetSelector.setCurrentIndex(lastTargetIndex)
+      else:
+        self.targetDisplacementChart.resetAndInitializeChart()
+
+
 
   def removeSliceAnnotations(self):
     for annotation in self.sliceAnnotations:
@@ -3716,18 +3715,18 @@ class TargetDisplacementChartWidget(object):
     self.plottingFrameWidget = qt.QWidget()
     self.plottingFrameLayout = qt.QGridLayout()
     self.plottingFrameWidget.setLayout(self.plottingFrameLayout)
-    self.plottingFrameLayout.addWidget(self.showLegendCheckBox, 0, 0)
-    self.plottingFrameLayout.addWidget(self._chartView, 1, 0)
+    self.plottingFrameLayout.addWidget(self.showLegendCheckBox, 1, 0)
+    self.plottingFrameLayout.addWidget(self._chartView, 2, 0)
 
     self.popupChartButton = qt.QPushButton("Undock chart")
     self.popupChartButton.setCheckable(True)
-    self.plottingFrameLayout.addWidget(self.popupChartButton, 2, 0)
+    self.plottingFrameLayout.addWidget(self.popupChartButton, 3, 0)
 
     self.DisplacementChartTargetSelector = qt.QComboBox()
     self.lastSelectedTarget = None
     self.targetSelectorLayout = qt.QFormLayout()
     self.targetSelectorLayout.addRow("Target:", self.DisplacementChartTargetSelector)
-    self.plottingFrameLayout.addLayout(self.targetSelectorLayout, 3, 0)
+    self.plottingFrameLayout.addLayout(self.targetSelectorLayout, 0, 0)
 
     plotFrameLayout.addWidget(self.plottingFrameWidget)
 
@@ -3797,29 +3796,26 @@ class TargetDisplacementChartWidget(object):
       self.showLegendCheckBox.setChecked(False)
 
   def onShowLegendChanged(self, checked):
-    if checked == 2:
-      self.chart.SetShowLegend(True)
-      self.chartView.scene().SetDirty(True)
-    else:
-      self.chart.SetShowLegend(False)
-      self.chartView.scene().SetDirty(True)
+    self.chart.SetShowLegend(True if checked == 2 else False)
+    self.chartView.scene().SetDirty(True)
 
   def onDockChartViewToggled(self, checked):
     if checked:
+      self.targetSelectorLayout.labelForField(self.DisplacementChartTargetSelector).hide()
       self.chartPopupWindow = qt.QDialog()
       self.chartPopupWindow.setWindowFlags(qt.Qt.WindowStaysOnTopHint)
       layout = qt.QGridLayout()
       self.chartPopupWindow.setLayout(layout)
-      layout.addWidget(self._chartView)
-      layout.addWidget(self.popupChartButton)
       targetLayout = qt.QFormLayout()
       targetLayout.addRow("Target:", self.DisplacementChartTargetSelector)
-      layout.addLayout(targetLayout, 3, 0)
+      layout.addLayout(targetLayout, 1, 0)
+      layout.addWidget(self._chartView, 2, 0)
+      child = self.targetSelectorLayout.takeAt(0)
       self.chartPopupWindow.finished.connect(self.dockChartView)
       self.chartPopupWindow.resize(self.chartPopupSize)
       self.chartPopupWindow.move(self.chartPopupPosition)
       self.chartPopupWindow.show()
-      self.popupChartButton.setText("Dock chart")
+      self.popupChartButton.hide()
       if self.DisplacementChartTargetSelector.currentText:
         self._chartView.show()
     else:
@@ -3828,11 +3824,11 @@ class TargetDisplacementChartWidget(object):
   def dockChartView(self):
     self.chartPopupSize = self.chartPopupWindow.size
     self.chartPopupPosition = self.chartPopupWindow.pos
-    self.plottingFrameLayout.addWidget(self._chartView, 1, 0)
-    self.plottingFrameLayout.addWidget(self.popupChartButton, 2, 0)
-    child = self.targetSelectorLayout.takeAt(0)
+    self.plottingFrameLayout.addWidget(self._chartView, 2, 0)
+    self.plottingFrameLayout.addWidget(self.popupChartButton, 3, 0)
     self.targetSelectorLayout.insertRow(0, "Target:", self.DisplacementChartTargetSelector)
-    self.popupChartButton.setText("Undock chart")
-    self.popupChartButton.disconnect('toggled(bool)', self.onDockChartViewToggled)
+    self.targetSelectorLayout.labelForField(self.DisplacementChartTargetSelector).show()
+    self.popupChartButton.blockSignals(True)
     self.popupChartButton.checked = False
-    self.popupChartButton.connect('toggled(bool)', self.onDockChartViewToggled)
+    self.popupChartButton.show()
+    self.popupChartButton.blockSignals(False)
