@@ -9,6 +9,7 @@ from plugins.case import SliceTrackerCaseManagerPlugin
 from plugins.results import SliceTrackerRegistrationResultsPlugin
 from plugins.targets import SliceTrackerTargetTablePlugin
 from plugins.training import SliceTrackerTrainingPlugin
+from plugins.arduino import SliceTrackerArduinoPlugin
 from ..constants import SliceTrackerConstants as constants
 from ..sessionData import RegistrationResult
 from ..helpers import IncomingDataMessageBox, SeriesTypeToolButton, SeriesTypeManager
@@ -75,6 +76,9 @@ class SliceTrackerOverviewStep(SliceTrackerStep):
 
     self.targetTablePlugin = SliceTrackerTargetTablePlugin()
     self.addPlugin(self.targetTablePlugin)
+
+    self.arduinoPlugin = SliceTrackerArduinoPlugin()
+    self.addPlugin(self.arduinoPlugin)
 
     self.layout().addWidget(self.caseManagerPlugin, 0, 0)
     self.layout().addWidget(self.trainingPlugin, 1, 0)

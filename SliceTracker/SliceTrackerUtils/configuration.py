@@ -60,3 +60,6 @@ class SliceTrackerConfiguration(ModuleWidgetMixin):
 
     if not self.getSetting("Incoming_DICOM_Port"):
       self.setSetting("Incoming_DICOM_Port", config.get('DICOM', 'Incoming_Port'))
+
+    if not self.getSetting("Arduino_Port"):
+      self.setSetting("Arduino_Port", config.get('Arduino', 'Port'))
