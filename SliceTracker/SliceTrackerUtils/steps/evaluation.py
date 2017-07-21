@@ -5,6 +5,7 @@ import slicer
 from base import SliceTrackerLogicBase, SliceTrackerStep
 from plugins.results import SliceTrackerRegistrationResultsPlugin
 from plugins.targets import SliceTrackerTargetTablePlugin
+from plugins.arduino import SliceTrackerArduinoPlugin
 
 from SlicerDevelopmentToolboxUtils.icons import Icons
 
@@ -30,6 +31,9 @@ class SliceTrackerEvaluationStep(SliceTrackerStep):
     self.registrationEvaluationGroupBoxLayout = qt.QGridLayout()
     self.registrationEvaluationGroupBox.setLayout(self.registrationEvaluationGroupBoxLayout)
     self.setupRegistrationValidationButtons()
+
+    self.arduinoPlugin = SliceTrackerArduinoPlugin()
+    self.addPlugin(self.arduinoPlugin)
 
     self.regResultsPlugin = SliceTrackerRegistrationResultsPlugin()
     self.addPlugin(self.regResultsPlugin)
