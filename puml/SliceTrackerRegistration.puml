@@ -1,0 +1,71 @@
+@startuml
+
+!include RegistrationResults.puml
+
+class SliceTrackerRegistrationLogic {
+  + ImageRegistrationTool imageRegistrationTool;
+  --
+  + run()
+}
+
+ImageRegistrationTool <.. SliceTrackerRegistrationLogic::imageRegistrationTool: has_a
+
+SliceTrackerRegistrationLogic <-- SliceTrackerRegistrationWidget: uses
+SliceTrackerRegistrationLogic <-- CLI: uses
+
+
+interface ImageRegistrationTool {
+  + NAME: None
+  + registrationResult: RegistrationResult
+  + {static} isToolAvailable()
+  + {abstract} run(parameterNode, registrationResult, progressCallback=None)
+  # _processParameterNode(parameterNode)
+  + updateProgress(**kwargs)
+}
+
+RegistrationResult <.. ImageRegistrationTool::registrationResult: has_a
+
+
+class BRAINRegistration {
+  + NAME="BRAINSFit"
+  + isToolAvailable()
+  + run(self, parameterNode, result, progressCallback=None)
+  - __runRigidRegistration()
+  - __runAffineRegistration()
+  - __runBSplineRegistration()
+}
+
+class ElastixRegistration {
+  + NAME="Elastix"
+  + isToolAvailable()
+  + run(self, parameterNode, result, progressCallback=None)
+  - __runRigidBRAINSRegistration()
+  - __runElastixRegistration()
+}
+
+BRAINSRigidRegistration <-- ElastixRegistration::__runRigidBRAINSRegistration: uses
+
+BRAINSRigidRegistration <-- BRAINRegistration::__runRigidRegistration: uses
+BRAINSAffineRegistration <-- BRAINRegistration::__runAffineRegistration: uses
+BRAINSBSplineRegistration <-- BRAINRegistration::__runBSplineRegistration: uses
+
+ImageRegistrationTool <|-- BRAINRegistration: is_a
+ImageRegistrationTool <|-- ElastixRegistration: is_a
+
+interface IBRAINSRegistrationType{
+  + fixedVolume
+  + movingVolume
+  + fixedLabel
+  + movingLabel
+  + outputTransform
+  + outputVolume
+  + initialTransform=None
+  + {abstract} run()
+  + getGeneralParams()
+}
+
+IBRAINSRegistrationType <|-- BRAINSRigidRegistration : is_a
+IBRAINSRegistrationType <|-- BRAINSAffineRegistration : is_a
+IBRAINSRegistrationType <|-- BRAINSBSplineRegistration : is_a
+
+@enduml

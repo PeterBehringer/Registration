@@ -18,6 +18,12 @@ class SliceTrackerConfiguration(ModuleWidgetMixin):
     if not self.getSetting("ZFrame_Registration_Class_Name"):
       self.setSetting("ZFrame_Registration_Class_Name", config.get('ZFrame Registration', 'class'))
 
+    if not self.getSetting("Prostate_Registration_Tool"):
+      self.setSetting("Prostate_Registration_Tool", config.get('Prostate Registration', 'Tool'))
+
+    if not self.getSetting("Prostate_Registration_Fallback"):
+      self.setSetting("Prostate_Registration_Fallback", config.get('Prostate Registration', 'Fallback'))
+
     if not self.getSetting("PLANNING_IMAGE"):
       self.setSetting("PLANNING_IMAGE", config.get('Series Descriptions', 'PLANNING_IMAGE'))
     if not self.getSetting("COVER_PROSTATE"):
