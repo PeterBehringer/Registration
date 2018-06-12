@@ -10,7 +10,7 @@ set(EXTENSION_DESCRIPTION "This extension provides modules to support in-bore MR
 set(EXTENSION_ICONURL "https://www.slicer.org/w/images/b/b1/SliceTracker_Logo_1.1_128x128.png")
 set(EXTENSION_SCREENSHOTURLS "http://wiki.slicer.org/slicerWiki/images/7/78/Slicetracker.gif")
 set(EXTENSION_STATUS "beta")
-set(EXTENSION_DEPENDS "SlicerDevelopmentToolbox mpReview SegmentEditorExtraEffects DeepInfer ZFrameRegistration")
+set(EXTENSION_DEPENDS "SlicerDevelopmentToolbox mpReview SegmentEditorExtraEffects DeepInfer SlicerZFrameRegistration")
 
 #-----------------------------------------------------------------------------
 find_package(Slicer REQUIRED)
