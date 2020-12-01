@@ -3,13 +3,13 @@ import qt
 import slicer
 import vtk
 
-from base import SliceTrackerLogicBase, SliceTrackerStep
+from .base import SliceTrackerLogicBase, SliceTrackerStep
 from ..constants import SliceTrackerConstants as constants
 from ..sessionData import SegmentationData
 
-from plugins.targeting import SliceTrackerTargetingPlugin
-from plugins.segmentation.manual import SliceTrackerManualSegmentationPlugin
-from plugins.segmentation.automatic import SliceTrackerAutomaticSegmentationPlugin
+from .plugins.targeting import SliceTrackerTargetingPlugin
+from .plugins.segmentation.manual import SliceTrackerManualSegmentationPlugin
+from .plugins.segmentation.automatic import SliceTrackerAutomaticSegmentationPlugin
 
 from SlicerDevelopmentToolboxUtils.helpers import SliceAnnotation
 from SlicerDevelopmentToolboxUtils.decorators import onModuleSelected

@@ -4,12 +4,12 @@ import qt
 import slicer
 import vtk
 
-from base import SliceTrackerLogicBase, SliceTrackerStep
-from plugins.case import SliceTrackerCaseManagerPlugin
-from plugins.results import SliceTrackerRegistrationResultsPlugin
-from plugins.targets import SliceTrackerTargetTablePlugin
-from plugins.training import SliceTrackerTrainingPlugin
-from plugins.charts import SliceTrackerDisplacementChartPlugin
+from .base import SliceTrackerLogicBase, SliceTrackerStep
+from .plugins.case import SliceTrackerCaseManagerPlugin
+from .plugins.results import SliceTrackerRegistrationResultsPlugin
+from .plugins.targets import SliceTrackerTargetTablePlugin
+from .plugins.training import SliceTrackerTrainingPlugin
+from .plugins.charts import SliceTrackerDisplacementChartPlugin
 from ..constants import SliceTrackerConstants as constants
 from ..sessionData import RegistrationResult
 from ..helpers import IncomingDataMessageBox, SeriesTypeToolButton, SeriesTypeManager

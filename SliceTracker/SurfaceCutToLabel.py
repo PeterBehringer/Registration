@@ -8,8 +8,6 @@ from SlicerDevelopmentToolboxUtils.icons import Icons
 
 from EditorLib import ColorBox
 
-from SegmentEditorSurfaceCutLib import SurfaceCutLogic
-
 
 class SurfaceCutToLabel(ScriptedLoadableModule):
 
@@ -474,7 +472,7 @@ class SurfaceCutToLabelLogic(ModuleLogicMixin, ScriptedLoadableModuleLogic):
     self.deletedMarkupPositions = []
 
   def addInputMarkupNodeObserver(self):
-    self.inputMarkupNodeObserver = self.inputMarkupNode.AddObserver(vtk.vtkCommand.ModifiedEvent,
+    self.inputMarkupNodeObserver = self.inputMarkupNode.AddObserver(slicer.vtkMRMLMarkupsNode.PointModifiedEvent,
                                                                     self.onMarkupModified)
 
   def removeInputMarkupNodeObserver(self):
@@ -503,6 +501,7 @@ class SurfaceCutToLabelLogic(ModuleLogicMixin, ScriptedLoadableModuleLogic):
       self.reset()
 
   def _initializeSurfaceCutLogic(self):
+    from SegmentEditorSurfaceCutLib import SurfaceCutLogic
     self._surfaceCutLogic = SurfaceCutLogic(self.scriptedEffect)
 
   def updateModel(self, caller=None, event=None):

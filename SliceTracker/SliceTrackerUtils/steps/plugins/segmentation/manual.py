@@ -4,7 +4,7 @@ import slicer
 
 from ...base import SliceTrackerPlugin, SliceTrackerLogicBase
 from ....constants import SliceTrackerConstants as constants
-from base import SliceTrackerSegmentationPluginBase
+from .base import SliceTrackerSegmentationPluginBase
 from SurfaceCutToLabel import SurfaceCutToLabelWidget
 
 from SlicerDevelopmentToolboxUtils.decorators import onModuleSelected

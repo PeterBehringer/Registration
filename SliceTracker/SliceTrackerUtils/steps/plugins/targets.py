@@ -448,7 +448,7 @@ class SliceTrackerTargetTablePlugin(SliceTrackerPlugin):
     self.moveTargetMode = False
 
   def clearTargetMovementObserverAndAnnotations(self):
-    for widget, (observer, annotation) in self.mouseReleaseEventObservers.iteritems():
+    for widget, (observer, annotation) in self.mouseReleaseEventObservers.items():
       sliceView = widget.sliceView()
       interactor = sliceView.interactorStyle().GetInteractor()
       interactor.RemoveObserver(observer)

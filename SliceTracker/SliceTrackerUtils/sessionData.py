@@ -9,8 +9,8 @@ from SlicerDevelopmentToolboxUtils.mixins import ModuleLogicMixin
 from SlicerDevelopmentToolboxUtils.decorators import onExceptionReturnNone, logmethod
 from SlicerDevelopmentToolboxUtils.widgets import CustomStatusProgressbar
 
-from constants import SliceTrackerConstants
-from helpers import SeriesTypeManager
+from .constants import SliceTrackerConstants
+from .helpers import SeriesTypeManager
 
 
 class SessionData(ModuleLogicMixin):
@@ -168,7 +168,7 @@ class SessionData(ModuleLogicMixin):
       self.customProgressBar.updateStatus("Loading series registration result %s" % result.name, index)
       slicer.app.processEvents()
 
-      for attribute, value in jsonResult.iteritems():
+      for attribute, value in jsonResult.items():
         logging.debug("found %s: %s" % (attribute, value))
         if attribute == 'volumes':
           self._loadResultFileData(value, directory, slicer.util.loadVolume, result.setVolume)
@@ -206,7 +206,7 @@ class SessionData(ModuleLogicMixin):
         self.customProgressBar.text = "Finished loading registration results"
 
   def _loadResultFileData(self, dictionary, directory, loadFunction, setFunction):
-    for regType, filename in dictionary.iteritems():
+    for regType, filename in dictionary.items():
       data = self._loadOrGetFileData(directory, filename, loadFunction)
       setFunction(regType, data)
 
@@ -323,7 +323,7 @@ class SessionData(ModuleLogicMixin):
         from git import Repo, InvalidGitRepositoryError
         repo = Repo(dirname, search_parent_directories=True)
         branch = repo.active_branch
-        print branch.name
+        print(branch.name)
         return {
           "GIT_WC_URL": repo.remote().url,
           "GIT_COMMIT_HASH": repo.head.object.hexsha
@@ -476,7 +476,7 @@ class AbstractRegistrationData(ModuleLogicMixin):
 
   def getAllFileNames(self):
     fileNames = {}
-    for regType, node in self.asDict().iteritems():
+    for regType, node in self.asDict().items():
       if node:
         fileNames[regType] = self.getFileName(node)
     return fileNames
@@ -501,7 +501,7 @@ class Serializable(object):
 
   def toJSON(self):
     output = {}
-    for key, value in self.__dict__.iteritems():
+    for key, value in self.__dict__.items():
       if any(key.startswith(starter) for starter in ["_", "__"]) or value is None or value == "":
         continue
       output[key] = value.toJSON() if hasattr(value, "toJSON") else value
@@ -667,7 +667,7 @@ class Targets(RegistrationTypeData):
     self.modifiedTargets[regType][index] = True
 
   def getRegistrationTypeForTargetList(self, targetList):
-    for regType, currentTargetList in self.asDict().iteritems():
+    for regType, currentTargetList in self.asDict().items():
       if targetList is currentTargetList:
         return regType
     return None

@@ -95,7 +95,7 @@ class PreopDataHandler(ModuleWidgetMixin, ModuleLogicMixin):
 
     @onReturnProcessEvents
     def updateProgressBar(**kwargs):
-      for key, value in kwargs.iteritems():
+      for key, value in kwargs.items():
         if hasattr(progress, key):
           setattr(progress, key, value)
 

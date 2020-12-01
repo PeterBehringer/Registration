@@ -125,7 +125,7 @@ class SliceTrackerRegistrationWidget(ScriptedLoadableModuleWidget, ModuleWidgetM
   @onReturnProcessEvents
   def updateProgressBar(self, **kwargs):
     if self.progress:
-      for key, value in kwargs.iteritems():
+      for key, value in kwargs.items():
         if hasattr(self.progress, key):
           setattr(self.progress, key, value)
 
@@ -237,7 +237,7 @@ class SliceTrackerRegistrationLogic(ScriptedLoadableModuleLogic, ModuleLogicMixi
                    'outputVolume': self.registrationResult.volumes.rigid.GetID(),
                    'maskProcessingMode': "ROI",
                    'useRigid': True}
-    for key, value in kwargs.iteritems():
+    for key, value in kwargs.items():
       paramsRigid[key] = value
     slicer.cli.run(slicer.modules.brainsfit, None, paramsRigid, wait_for_completion=True)
     self.registrationResult.cmdArguments += "Rigid Registration Parameters: %s" % str(paramsRigid) + "\n\n"
@@ -273,7 +273,7 @@ class SliceTrackerRegistrationLogic(ScriptedLoadableModuleLogic, ModuleLogicMixi
                      'costFunctionConvergenceFactor': "1.00E+09",
                      'maskProcessingMode': "ROI",
                      'initialTransform': initialTransform}
-    for key, value in kwargs.iteritems():
+    for key, value in kwargs.items():
       paramsBSpline[key] = value
 
     slicer.cli.run(slicer.modules.brainsfit, None, paramsBSpline, wait_for_completion=True)
@@ -306,7 +306,7 @@ def main(argv):
 
     for inputFile in [args.fixed_label, args.moving_label, args.fixed_volume, args.moving_volume]:
       if not os.path.isfile(inputFile):
-        raise AttributeError, "File not found: %s" % inputFile
+        raise AttributeError("File not found: %s" % inputFile)
 
     success, fixedLabel = slicer.util.loadLabelVolume(args.fixed_label, returnNode=True)
     success, movingLabel = slicer.util.loadLabelVolume(args.moving_label, returnNode=True)
@@ -325,8 +325,8 @@ def main(argv):
     if args.output_directory != "-":
       logic.registrationResult.save(args.output_directory)
 
-  except Exception, e:
-    print e
+  except Exception as e:
+    print(e)
   sys.exit(0)
 
 if __name__ == "__main__":

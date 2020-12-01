@@ -3,10 +3,10 @@ import vtk, ctk, ast
 import qt
 
 import slicer
-from sessionData import SessionData, RegistrationResult, RegistrationTypeData
-from constants import SliceTrackerConstants
-from helpers import SeriesTypeManager
-from preopHandler import PreopDataHandler
+from .sessionData import SessionData, RegistrationResult, RegistrationTypeData
+from .constants import SliceTrackerConstants
+from .helpers import SeriesTypeManager
+from .preopHandler import PreopDataHandler
 
 from SlicerDevelopmentToolboxUtils.constants import DICOMTAGS, STYLE
 from SlicerDevelopmentToolboxUtils.events import SlicerDevelopmentToolboxEvents
@@ -441,7 +441,7 @@ class SliceTrackerSession(StepBasedSession):
     currentInfo = self.getPatientInformation(dicomFileName)
     currentID = currentInfo["PatientID"]
     patientName = currentInfo["PatientName"]
-    for seriesNumber, receivedInfo in seriesNumberPatientID.iteritems():
+    for seriesNumber, receivedInfo in seriesNumberPatientID.items():
       patientID = receivedInfo["PatientID"]
       if patientID is not None and patientID != currentID:
         m = 'WARNING:\n' \
@@ -457,8 +457,7 @@ class SliceTrackerSession(StepBasedSession):
 
   def getPatientIDValidationSource(self):
     if len(self.loadableList.keys()) > 1:
-      keys = self.loadableList.keys()
-      keys.sort(key=lambda x: RegistrationResult.getSeriesNumberFromString(x))
+      keys = sorted(self.loadableList.keys())
       return self.loadableList[keys[0]][0]
     else:
       return None
@@ -670,7 +669,7 @@ class SliceTrackerSession(StepBasedSession):
   @onReturnProcessEvents
   def updateProgressBar(self, **kwargs):
     if self.progress:
-      for key, value in kwargs.iteritems():
+      for key, value in kwargs.items():
         if hasattr(self.progress, key):
           setattr(self.progress, key, value)
 

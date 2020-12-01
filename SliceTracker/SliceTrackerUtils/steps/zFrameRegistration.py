@@ -9,7 +9,7 @@ import sitkUtils
 
 from ..algorithms.zFrameRegistration import LineMarkerRegistration, OpenSourceZFrameRegistration
 from ..constants import SliceTrackerConstants
-from base import SliceTrackerLogicBase, SliceTrackerStep
+from .base import SliceTrackerLogicBase, SliceTrackerStep
 
 from SlicerDevelopmentToolboxUtils.decorators import onModuleSelected
 from SlicerDevelopmentToolboxUtils.helpers import SliceAnnotation
@@ -78,7 +78,7 @@ class SliceTrackerZFrameRegistrationStepLogic(SliceTrackerLogicBase):
   def loadZFrameModel(self):
     zFrameModelPath = os.path.join(self.resourcesPath, "zframe", self.ZFRAME_MODEL_PATH)
     if not self.zFrameModelNode:
-      _, self.zFrameModelNode = slicer.util.loadModel(zFrameModelPath, returnNode=True)
+      self.zFrameModelNode = slicer.util.loadModel(zFrameModelPath)
       self.zFrameModelNode.SetName(self.ZFRAME_MODEL_NAME)
       slicer.mrmlScene.AddNode(self.zFrameModelNode)
       modelDisplayNode = self.zFrameModelNode.GetDisplayNode()
@@ -101,7 +101,7 @@ class SliceTrackerZFrameRegistrationStepLogic(SliceTrackerLogicBase):
 
     defaultTemplateFile = os.path.join(self.resourcesPath, "zframe", self.ZFRAME_TEMPLATE_CONFIG_FILE_NAME)
 
-    reader = csv.reader(open(defaultTemplateFile, 'rb'))
+    reader = csv.reader(open(defaultTemplateFile, newline=''))
     try:
       next(reader)
       for row in reader:

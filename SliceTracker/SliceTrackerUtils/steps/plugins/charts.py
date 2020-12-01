@@ -36,7 +36,7 @@ class SliceTrackerDisplacementChartLogic(SliceTrackerLogicBase):
     approvedResults = sorted([r for r in self.session.data.registrationResults.values() if r.approved],
                              key=lambda result: result.seriesNumber)
     nonSelectedApprovedResults = filter(lambda x: x.seriesNumber != selectedSeriesNumber, approvedResults)
-    if len(nonSelectedApprovedResults) == 0 or self.session.currentResult is None:
+    if len(list(nonSelectedApprovedResults)) == 0 or self.session.currentResult is None:
       return False
     return True
 

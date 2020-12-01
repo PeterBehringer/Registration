@@ -1,7 +1,7 @@
-import ConfigParser
+import configparser
 import inspect, os
 from SlicerDevelopmentToolboxUtils.mixins import ModuleWidgetMixin
-from constants import SliceTrackerConstants as constants
+from .constants import SliceTrackerConstants as constants
 
 
 class SliceTrackerConfiguration(ModuleWidgetMixin):
@@ -13,7 +13,7 @@ class SliceTrackerConfiguration(ModuleWidgetMixin):
 
   def loadConfiguration(self):
 
-    config = ConfigParser.RawConfigParser()
+    config = configparser.RawConfigParser()
     config.read(self.configFile)
 
     if not self.getSetting("ZFrame_Registration_Class_Name"):

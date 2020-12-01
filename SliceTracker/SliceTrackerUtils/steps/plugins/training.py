@@ -95,7 +95,7 @@ class SliceTrackerTrainingPlugin(SliceTrackerPlugin):
       self.clearData()
 
   def copyDirectory(self, source, destination, recursive=True):
-    print source
+    print(source)
     assert os.path.isdir(source)
     for listObject in os.listdir(source):
       current = os.path.join(source, listObject)

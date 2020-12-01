@@ -1,6 +1,6 @@
 import vtk
 
-from base import SliceTrackerSegmentationPluginBase
+from .base import SliceTrackerSegmentationPluginBase
 from ....algorithms.automaticProstateSegmentation import AutomaticSegmentationLogic
 
 class SliceTrackerAutomaticSegmentationPlugin(SliceTrackerSegmentationPluginBase):

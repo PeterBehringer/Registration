@@ -6,7 +6,7 @@ import vtk
 import re
 import slicer
 
-from constants import SliceTrackerConstants as constants
+from .constants import SliceTrackerConstants as constants
 
 from SlicerDevelopmentToolboxUtils.decorators import logmethod
 from SlicerDevelopmentToolboxUtils.widgets import ExtendedQMessageBox

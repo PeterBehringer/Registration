@@ -32,7 +32,7 @@ class DICOMDirectoryObserver(object):
     while True:
       currentFiles = self.listdirRecursive(self.directory)
       if len(self.files) < len(currentFiles):
-        print "Number of files changed"
+        print("Number of files changed")
         for newFile in self.getNewFiles(currentFiles):
           self.storeSCU(newFile)
       time.sleep(secondsToWait)
@@ -46,7 +46,7 @@ class DICOMDirectoryObserver(object):
 
   def storeSCU(self, fileName):
     cmd = ('storescu ' + self.host + ' ' + self.port + ' ' + fileName)
-    print cmd
+    print(cmd)
     os.system(cmd)
     self.files.add(fileName)
 
@@ -58,11 +58,11 @@ def main(argv):
    try:
       opts, args = getopt.getopt(argv,"i:d:h:p:?",["help","directory=","host=","port=","interval="])
    except getopt.GetoptError:
-      print 'watch.py -d <watchDirectory> -h <host> -p <port> -i <interval [in seconds]>'
+      print('watch.py -d <watchDirectory> -h <host> -p <port> -i <interval [in seconds]>')
       sys.exit(2)
    for opt, arg in opts:
       if opt in ("-?", "--help"):
-         print 'watch.py -d <watchDirectory> -h <host> -p <port>'
+         print('watch.py -d <watchDirectory> -h <host> -p <port>')
          sys.exit()
       elif opt in ("-d", "--directory"):
          watchDirectory = arg
@@ -73,12 +73,12 @@ def main(argv):
       elif opt in ("-i", "--interval"):
          interval = int(arg)
    if watchDirectory and host and port:
-     print 'Directory to watch is: ', watchDirectory
-     print 'Host to send DICOM files to is: ', host
-     print 'Port to send DICOM files to is: ', port
+     print('Directory to watch is: ', watchDirectory)
+     print('Host to send DICOM files to is: ', host)
+     print('Port to send DICOM files to is: ', port)
 
      watcher = DICOMDirectoryObserver(directory=watchDirectory, host=host, port=port)
-     print "Will watch!"
+     print("Will watch!")
      watcher.watch(interval)
 
 if __name__ == "__main__":

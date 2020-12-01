@@ -1,7 +1,7 @@
 import qt
 from ...constants import SliceTrackerConstants as constants
 from ..base import SliceTrackerPlugin, SliceTrackerLogicBase
-from targets import SliceTrackerTargetTablePlugin
+from .targets import SliceTrackerTargetTablePlugin
 
 from SlicerDevelopmentToolboxUtils.helpers import SliceAnnotation
 from SlicerDevelopmentToolboxUtils.widgets import TargetCreationWidget

@@ -2,11 +2,11 @@ import os
 import qt
 import vtk
 import slicer
-from base import SliceTrackerLogicBase, SliceTrackerStep
+from .base import SliceTrackerLogicBase, SliceTrackerStep
 from ..constants import SliceTrackerConstants as constants
-from plugins.results import SliceTrackerRegistrationResultsPlugin
-from plugins.targets import SliceTrackerTargetTablePlugin
-from plugins.charts import SliceTrackerDisplacementChartPlugin
+from .plugins.results import SliceTrackerRegistrationResultsPlugin
+from .plugins.targets import SliceTrackerTargetTablePlugin
+from .plugins.charts import SliceTrackerDisplacementChartPlugin
 
 from SlicerDevelopmentToolboxUtils.icons import Icons
 
